@@ -10,7 +10,7 @@ public class MainActivity extends AppCompatActivity {
     private LiveDrawingView liveDrawingView;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) throws  {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Display display = getWindowManager().getDefaultDisplay();
