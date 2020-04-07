@@ -5,10 +5,14 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import java.util.ArrayList;
 
 public class LiveDrawingView extends SurfaceView implements Runnable {
     private final boolean DEBUGGING = true;
@@ -31,6 +35,11 @@ public class LiveDrawingView extends SurfaceView implements Runnable {
     private RectF resetButton;
     private RectF togglePauseButton;
 
+    private ArrayList<ParticleSystem> particleSystems = new ArrayList<>();
+    private int nextSystem = 0;
+    private final int MAX_SYSTEM = 1000;
+    private int particlesPerSystem = 100;
+
     public LiveDrawingView(Context context, int x, int y) {
         super(context);
         screenX = x;
@@ -42,6 +51,11 @@ public class LiveDrawingView extends SurfaceView implements Runnable {
 
         resetButton = new RectF(0, 0, 100, 100);
         togglePauseButton = new RectF(0, 150, 100, 250);
+
+        for (int i = 0; i < MAX_SYSTEM; i++) {
+            particleSystems.add(new ParticleSystem());
+            particleSystems.get(i).init(particlesPerSystem);
+        }
     }
 
     private void draw() {
@@ -51,6 +65,11 @@ public class LiveDrawingView extends SurfaceView implements Runnable {
             paint.setColor(Color.WHITE);
             paint.setTextSize(fontSize);
 
+            for (int i = 0; i < particleSystems.size(); i++) {
+                particleSystems.get(i).draw(canvas, paint);
+            }
+
+            paint.setColor(Color.WHITE);
             canvas.drawRect(resetButton, paint);
             canvas.drawRect(togglePauseButton, paint);
             if (DEBUGGING) {
@@ -61,15 +80,17 @@ public class LiveDrawingView extends SurfaceView implements Runnable {
     }
 
     private void printDebugginText() {
+        paint.setColor(Color.WHITE);
         int debugSize = fontSize;
-        int debugStart = 150;
+        int startX = 150;
+        int startY = marginSize;
+        int y1 = startY + debugSize;
+        int y2 = y1 + marginSize + debugSize;
+        int y3 = y2 + marginSize + debugSize;
         paint.setTextSize(debugSize);
-        canvas.drawText("FPS: " + FPS, 10, debugStart + debugSize, paint);
-    }
-
-    @Override
-    public void draw(Canvas canvas) {
-        super.draw(canvas);
+        canvas.drawText("FPS: " + FPS, startX, y1, paint);
+        canvas.drawText("Systems: "+ nextSystem, startX, y2, paint);
+        canvas.drawText("Particles: " + nextSystem * particlesPerSystem, startX, y3, paint);
     }
 
     @Override
@@ -89,6 +110,11 @@ public class LiveDrawingView extends SurfaceView implements Runnable {
     }
 
     private void update() {
+        for (int i = 0; i < particleSystems.size(); i++) {
+            if (particleSystems.get(i).isRunning) {
+                particleSystems.get(i).update(FPS);
+            }
+        }
     }
 
     public void pause() {
@@ -104,5 +130,28 @@ public class LiveDrawingView extends SurfaceView implements Runnable {
         drawing = true;
         thread = new Thread(this);
         thread.start();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_MOVE ) {
+            particleSystems.get(nextSystem).emitParticles(new PointF(event.getX(), event.getY()));
+
+            nextSystem++;
+            if (nextSystem >= MAX_SYSTEM) {
+                nextSystem = 0;
+            }
+        }
+
+        if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_DOWN) {
+            if (resetButton.contains(event.getX(), event.getY())) {
+                nextSystem = 0;
+            }
+
+            if (togglePauseButton.contains(event.getX(), event.getY())) {
+                paused = !paused;
+            }
+        }
+        return true;
     }
 }

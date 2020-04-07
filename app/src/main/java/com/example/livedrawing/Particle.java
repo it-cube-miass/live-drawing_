@@ -3,15 +3,17 @@ package com.example.livedrawing;
 import android.graphics.PointF;
 
 public class Particle {
-    PointF velocity;
-    PointF position;
+    private PointF velocity;
+    private PointF position;
+    private int color;
 
-    Particle(PointF direction) {
+    Particle(PointF direction, int color) {
         velocity = new PointF();
         position = new PointF();
 
         velocity.x = direction.x;
         velocity.y = direction.y;
+        this.color = color;
     }
 
     void update(float fps) {
@@ -26,5 +28,9 @@ public class Particle {
 
     PointF getPosition()  {
         return position;
+    }
+
+    int getColor() {
+        return color;
     }
 }
